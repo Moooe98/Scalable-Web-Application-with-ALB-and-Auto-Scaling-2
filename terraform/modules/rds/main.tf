@@ -65,23 +65,21 @@ resource "aws_db_instance" "main" {
   parameter_group_name   = aws_db_parameter_group.main.name
 
   # Multi-AZ for automatic failover
-  multi_az = true
+  # NOTE: Set to false for free-tier accounts; set to true for production paid accounts
+  multi_az = false
 
-  # Automated backups
-  backup_retention_period = 7
-  backup_window           = "03:00-04:00"
+  # Automated backups (0 = disabled for free tier; set to 7 for paid accounts)
+  backup_retention_period = 0
   maintenance_window      = "Mon:04:00-Mon:05:00"
 
-  # Enhanced monitoring
-  monitoring_interval = 60
-  monitoring_role_arn = aws_iam_role.rds_monitoring.arn
+  # Enhanced monitoring (disabled for free tier)
+  monitoring_interval = 0
 
-  # Performance insights
-  performance_insights_enabled = true
+  # Performance insights (disabled for free tier)
+  performance_insights_enabled = false
 
   deletion_protection = false
-  skip_final_snapshot = false
-  final_snapshot_identifier = "${var.project_name}-${var.environment}-final-snapshot"
+  skip_final_snapshot = true
 
   auto_minor_version_upgrade = true
   publicly_accessible        = false
@@ -91,24 +89,6 @@ resource "aws_db_instance" "main" {
   }
 }
 
-# Enhanced monitoring IAM role
-data "aws_iam_policy_document" "rds_assume" {
-  statement {
-    effect  = "Allow"
-    actions = ["sts:AssumeRole"]
-    principals {
-      type        = "Service"
-      identifiers = ["monitoring.rds.amazonaws.com"]
-    }
-  }
-}
+# Enhanced monitoring IAM role — disabled for free-tier accounts
+# Uncomment and set monitoring_interval=60 + monitoring_role_arn for paid accounts
 
-resource "aws_iam_role" "rds_monitoring" {
-  name               = "${var.project_name}-${var.environment}-rds-monitoring-role"
-  assume_role_policy = data.aws_iam_policy_document.rds_assume.json
-}
-
-resource "aws_iam_role_policy_attachment" "rds_monitoring" {
-  role       = aws_iam_role.rds_monitoring.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
-}
