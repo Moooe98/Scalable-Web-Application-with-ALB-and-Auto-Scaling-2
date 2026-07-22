@@ -244,7 +244,8 @@ resource "aws_network_acl" "private_db" {
     rule_no    = 100
     protocol   = "tcp"
     action     = "allow"
-    cidr_block = "10.0.11.0/23"  # App subnets only
+    cidr_block = "10.0.10.0/23"  # App subnets only (covers 10.0.11.0/24 and 10.0.12.0/24)
+
     from_port  = 3306
     to_port    = 3306
   }
