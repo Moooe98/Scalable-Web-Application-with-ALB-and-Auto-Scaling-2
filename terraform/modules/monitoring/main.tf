@@ -164,6 +164,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         width  = 8
         height = 6
         properties = {
+          region  = var.aws_region
           title   = "ALB Request Count"
           metrics = [["AWS/ApplicationELB", "RequestCount", "LoadBalancer", var.alb_arn_suffix]]
           period  = 300
@@ -178,7 +179,8 @@ resource "aws_cloudwatch_dashboard" "main" {
         width  = 8
         height = 6
         properties = {
-          title  = "ALB HTTP Errors"
+          region  = var.aws_region
+          title   = "ALB HTTP Errors"
           metrics = [
             ["AWS/ApplicationELB", "HTTPCode_Target_5XX_Count", "LoadBalancer", var.alb_arn_suffix],
             ["AWS/ApplicationELB", "HTTPCode_Target_4XX_Count", "LoadBalancer", var.alb_arn_suffix]
@@ -195,6 +197,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         width  = 8
         height = 6
         properties = {
+          region  = var.aws_region
           title   = "ALB Target Response Time"
           metrics = [["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", var.alb_arn_suffix]]
           period  = 60
@@ -209,6 +212,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         width  = 8
         height = 6
         properties = {
+          region  = var.aws_region
           title   = "ASG CPU Utilization %"
           metrics = [["AWS/EC2", "CPUUtilization", "AutoScalingGroupName", var.asg_name]]
           period  = 60
@@ -223,7 +227,8 @@ resource "aws_cloudwatch_dashboard" "main" {
         width  = 8
         height = 6
         properties = {
-          title  = "ASG Instance Count"
+          region  = var.aws_region
+          title   = "ASG Instance Count"
           metrics = [
             ["AWS/AutoScaling", "GroupInServiceInstances", "AutoScalingGroupName", var.asg_name],
             ["AWS/AutoScaling", "GroupDesiredCapacity", "AutoScalingGroupName", var.asg_name]
@@ -240,7 +245,8 @@ resource "aws_cloudwatch_dashboard" "main" {
         width  = 8
         height = 6
         properties = {
-          title  = "Healthy vs Unhealthy Hosts"
+          region  = var.aws_region
+          title   = "Healthy vs Unhealthy Hosts"
           metrics = [
             ["AWS/ApplicationELB", "HealthyHostCount", "LoadBalancer", var.alb_arn_suffix, "TargetGroup", var.tg_arn_suffix],
             ["AWS/ApplicationELB", "UnHealthyHostCount", "LoadBalancer", var.alb_arn_suffix, "TargetGroup", var.tg_arn_suffix]
@@ -257,6 +263,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         width  = 8
         height = 6
         properties = {
+          region  = var.aws_region
           title   = "RDS CPU Utilization %"
           metrics = [["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", var.rds_identifier]]
           period  = 60
@@ -271,6 +278,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         width  = 8
         height = 6
         properties = {
+          region  = var.aws_region
           title   = "RDS Free Storage"
           metrics = [["AWS/RDS", "FreeStorageSpace", "DBInstanceIdentifier", var.rds_identifier]]
           period  = 300
@@ -285,6 +293,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         width  = 8
         height = 6
         properties = {
+          region  = var.aws_region
           title   = "RDS DB Connections"
           metrics = [["AWS/RDS", "DatabaseConnections", "DBInstanceIdentifier", var.rds_identifier]]
           period  = 60

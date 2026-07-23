@@ -226,9 +226,11 @@ module "monitoring" {
 
   project_name      = var.project_name
   environment       = var.environment
+  aws_region        = var.aws_region
   alb_arn_suffix    = module.alb.alb_arn_suffix
   tg_arn_suffix     = module.alb.target_group_arn_suffix
   asg_name          = module.ec2_asg.asg_name
   rds_identifier    = module.rds.rds_identifier
   sns_email         = var.sns_alarm_email
 }
+
