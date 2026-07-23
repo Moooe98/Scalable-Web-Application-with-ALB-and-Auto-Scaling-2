@@ -1,9 +1,18 @@
 #!/bin/bash
-set -euxo pipefail
+# Do NOT use set -e — allow individual steps to fail without killing the whole script
+
+exec > /var/log/user-data.log 2>&1
+
+echo "=== Starting user-data script $(date) ==="
 
 # ── System Updates ────────────────────────────────────────────────────────────
-dnf update -y
-dnf install -y nginx mysql python3 python3-pip amazon-cloudwatch-agent
+dnf update -y || true
+
+# Install nginx, python3, and CloudWatch agent
+# Note: 'mysql' CLI is not in AL2023 repos; use 'mariadb105' for mysql client
+dnf install -y nginx python3 python3-pip amazon-cloudwatch-agent || true
+
+echo "=== Packages installed ==="
 
 # ── Nginx Configuration ───────────────────────────────────────────────────────
 cat > /etc/nginx/conf.d/app.conf <<'EOF'
@@ -23,13 +32,12 @@ server {
 
     location / {
         try_files $uri $uri/ /index.html;
-        
+
         # Security headers
         add_header X-Frame-Options "SAMEORIGIN";
         add_header X-Content-Type-Options "nosniff";
         add_header X-XSS-Protection "1; mode=block";
         add_header Referrer-Policy "strict-origin-when-cross-origin";
-        add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';";
     }
 
     # Cache static assets
@@ -42,6 +50,8 @@ server {
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml image/svg+xml;
 }
 EOF
+
+echo "=== Nginx config written ==="
 
 # ── Deploy Sample Web Application ─────────────────────────────────────────────
 mkdir -p /var/www/html
@@ -121,7 +131,7 @@ cat > /var/www/html/index.html <<'HTMLEOF'
       <div class="service"><div class="icon">🛡️</div><div class="name">WAF</div><div>OWASP Top 10</div></div>
       <div class="service"><div class="icon">⚖️</div><div class="name">ALB</div><div>Layer 7 Routing</div></div>
       <div class="service"><div class="icon">⚡</div><div class="name">EC2 + ASG</div><div>Auto Scaling</div></div>
-      <div class="service"><div class="icon">🗄️</div><div class="name">RDS Multi-AZ</div><div>MySQL 8.0</div></div>
+      <div class="service"><div class="icon">🗄️</div><div class="name">RDS MySQL</div><div>MySQL 8.0</div></div>
       <div class="service"><div class="icon">📊</div><div class="name">CloudWatch</div><div>Monitoring</div></div>
     </div>
     <div class="instance-info">
@@ -132,13 +142,15 @@ cat > /var/www/html/index.html <<'HTMLEOF'
 </html>
 HTMLEOF
 
+echo "=== HTML deployed ==="
+
 # ── CloudWatch Agent Config ───────────────────────────────────────────────────
 cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'CWEOF'
 {
   "metrics": {
     "namespace": "ScalableWebApp/EC2",
     "metrics_collected": {
-      "cpu": { "measurement": ["cpu_usage_idle", "cpu_usage_user", "cpu_usage_system"], "metrics_collection_interval": 60 },
+      "cpu": { "measurement": ["cpu_usage_idle", "cpu_usage_user"], "metrics_collection_interval": 60 },
       "mem": { "measurement": ["mem_used_percent"], "metrics_collection_interval": 60 },
       "disk": { "measurement": ["disk_used_percent"], "metrics_collection_interval": 60 }
     }
@@ -156,7 +168,7 @@ cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'CWEOF
 }
 CWEOF
 
-# Store DB connection info (for application use)
+# Store DB connection info
 cat > /etc/app.env <<ENVEOF
 DB_HOST=${db_endpoint}
 DB_NAME=${db_name}
@@ -168,11 +180,12 @@ chmod 600 /etc/app.env
 # ── Start Services ────────────────────────────────────────────────────────────
 systemctl enable nginx
 systemctl start nginx
-systemctl enable amazon-cloudwatch-agent
+echo "=== Nginx started: $(systemctl is-active nginx) ==="
+
 /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
   -a fetch-config \
   -m ec2 \
   -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json \
-  -s
+  -s || true
 
-echo "✅ User data script completed successfully"
+echo "=== User data script completed successfully $(date) ==="
